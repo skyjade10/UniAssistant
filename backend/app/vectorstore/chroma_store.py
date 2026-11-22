@@ -65,3 +65,12 @@ class ChromaStore:
             name=COLLECTION_NAME,
             metadata={"hnsw:space": "cosine"}
         )
+
+
+    def get_all_documents(self):
+
+        results = self.collection.get(
+            include=["documents", "metadatas"]
+        )
+
+        return results

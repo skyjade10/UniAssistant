@@ -1,23 +1,52 @@
+
 def expand_query(question: str) -> str:
 
     q = question.lower()
 
-    if any(word in q for word in [
-        "programme", "programmes",
-        "degree", "course", "courses"
-    ]):
-        return f"""
-        {question}
+    expansion_terms = []
 
-        ZUT academic programmes and qualifications.
-        Undergraduate degree programmes.
-        Full-time degree programmes.
-        Evening degree programmes.
-        Open and Distance Learning programmes.
-        Bachelor of Information Technology.
-        Bachelor of Cyber Security.
-        Bachelor of Software Engineering.
-        Bachelor of Business Administration.
-        """
+    # Location and address intent
+    location_terms = [
+        "where",
+        "location",
+        "located",
+        "address",
+        "contact",
+        "campus",
+        "situated"
+    ]
 
-    return question
+    if any(term in q for term in location_terms):
+        expansion_terms.extend([
+            "physical address",
+            "postal address",
+            "street address",
+            "road",
+            "city",
+            "campus location",
+            "contact details"
+        ])
+
+    # Academic programme intent
+    programme_terms = [
+        "programme",
+        "programmes",
+        "degree",
+        "course",
+        "courses"
+    ]
+
+    if any(term in q for term in programme_terms):
+        expansion_terms.extend([
+            "full-time degree programmes",
+            "open and distance learning programmes",
+            "evening degree programmes"
+        ])
+
+    if not expansion_terms:
+        return question
+
+    return "\n".join([
+        question,
+        *expansion_terms
+    ])

@@ -1,30 +1,29 @@
-
 from app.rag.engine import RAGEngine
 
+engine = RAGEngine()
 
-def main():
+questions = [
+    "Where is ZUT located?",
+    "List the undergraduate degree programmes offered by ZUT."
+]
 
-    engine = RAGEngine()
+for question in questions:
 
-    question = input("Ask UniAssist: ")
+    print("\n" + "=" * 60)
+    print("QUESTION:", question)
+    print("=" * 60)
 
     result = engine.ask(question)
 
-    print("\nUNIASSIST RESPONSE")
-    print("------------------")
-
+    print("\nANSWER:")
     print(result["answer"])
 
-    print("\nSOURCES")
-    print("-------")
+    print("\nSOURCES:")
 
     for source in result["sources"]:
-
-        print("\nSource:", source["id"])
-        print("Title:", source["title"])
-        print("URL:", source["url"])
-        print("Page:", source["page_number"])
-
-
-if __name__ == "__main__":
-    main()
+        print(
+            source["id"],
+            source["title"],
+            "Page:", source["page_number"],
+            "URL:", source["url"]
+        )

@@ -14,8 +14,12 @@ class RAGEngine:
         # Step 1: Retrieve relevant documents.
         documents = self.retriever.retrieve(
             question,
-            top_k=4
+            top_k=6
         )
+
+        for document in documents:
+            print("\nRETRIEVED METADATA:")
+            print(document.get("metadata", {}))
 
         # Step 2: Check whether we have useful results.
         if not documents:

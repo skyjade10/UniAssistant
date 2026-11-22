@@ -1,0 +1,206 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="theme-color" content="#071f2b">
+    <title>UniAssist AI | ZUT</title>
+
+    <link rel="stylesheet" href="chatbot.css">
+</head>
+
+<body>
+
+    <!-- Interactive background -->
+    <canvas id="particle-canvas" aria-hidden="true"></canvas>
+    <div class="background-overlay" aria-hidden="true"></div>
+
+    <main class="demo-page">
+
+        <nav class="navbar">
+            <a href="#" class="brand">
+                <span class="brand-icon">U</span>
+                <span>UniAssist<span class="brand-ai"> AI</span></span>
+            </a>
+
+            <span class="nav-status">
+                <span class="status-dot"></span>
+                University Assistant
+            </span>
+        </nav>
+
+        <section class="hero">
+            <div class="hero-tag">
+                <span class="hero-tag-dot"></span>
+                YOUR INTELLIGENT UNIVERSITY ASSISTANT
+            </div>
+
+            <h1>
+                Your University,<br>
+                <span>One Conversation Away.</span>
+            </h1>
+
+            <p class="hero-description">
+                Have questions about admissions, academic programmes,
+                or university life? UniAssist is here to help you
+                find the information you need.
+            </p>
+
+            <button
+                class="hero-button"
+                id="hero-chat-button"
+                type="button"
+            >
+                <span>Start a conversation</span>
+                <span aria-hidden="true">→</span>
+            </button>
+
+            <div class="hero-features">
+                <span><span class="feature-dot"></span> Admissions</span>
+                <span><span class="feature-dot"></span> Programmes</span>
+                <span><span class="feature-dot"></span> University information</span>
+            </div>
+        </section>
+
+        <div class="hero-bottom">
+            <span>ZAMBIA UNIVERSITY COLLEGE OF TECHNOLOGY</span>
+            <span>POWERED BY AI</span>
+        </div>
+
+    </main>
+
+    <!-- Animated chatbot launcher -->
+    <button
+        id="chat-toggle"
+        class="chat-toggle"
+        aria-label="Open UniAssist chat"
+        aria-expanded="false"
+        type="button"
+    >
+        <svg
+            class="robot-icon"
+            viewBox="0 0 100 100"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+        >
+            <!-- Antenna -->
+            <path d="M50 18 V9" class="robot-line"/>
+            <circle cx="50" cy="7" r="4" class="robot-antenna"/>
+
+            <!-- Head -->
+            <rect x="19" y="22" width="62" height="53"
+                  rx="18" class="robot-head"/>
+
+            <!-- Ears -->
+            <rect x="12" y="39" width="8" height="20"
+                  rx="4" class="robot-ear"/>
+            <rect x="80" y="39" width="8" height="20"
+                  rx="4" class="robot-ear"/>
+
+            <!-- Eyes -->
+            <circle cx="38" cy="46" r="5" class="robot-eye"/>
+            <circle cx="62" cy="46" r="5" class="robot-eye"/>
+
+            <!-- Mouth -->
+            <path d="M40 61 Q50 68 60 61"
+                  class="robot-mouth"/>
+
+            <!-- Body -->
+            <path d="M35 77 V85 Q50 94 65 85 V77"
+                  class="robot-body"/>
+        </svg>
+
+        <span class="robot-tooltip">Ask UniAssist</span>
+    </button>
+
+    <!-- Chat widget -->
+    <section
+        id="chat-widget"
+        class="chat-widget"
+        aria-label="UniAssist AI chatbot"
+        hidden
+    >
+        <header class="chat-header">
+
+            <div class="chat-brand">
+                <div class="chat-brand-icon">
+                    <svg viewBox="0 0 100 100" aria-hidden="true">
+                        <rect x="19" y="22" width="62" height="53"
+                              rx="18" fill="none" stroke="currentColor"
+                              stroke-width="5"/>
+                        <circle cx="38" cy="46" r="5" fill="currentColor"/>
+                        <circle cx="62" cy="46" r="5" fill="currentColor"/>
+                        <path d="M40 61 Q50 68 60 61"
+                              fill="none" stroke="currentColor"
+                              stroke-width="4" stroke-linecap="round"/>
+                        <path d="M50 22 V10"
+                              stroke="currentColor" stroke-width="4"/>
+                        <circle cx="50" cy="8" r="4" fill="#42d9c8"/>
+                    </svg>
+                </div>
+
+                <div>
+                    <h2>UniAssist</h2>
+                    <p>
+                        <span class="status-dot"></span>
+                        Here to help
+                    </p>
+                </div>
+            </div>
+
+            <button
+                id="chat-close"
+                class="chat-close"
+                aria-label="Close chat"
+                type="button"
+            >
+                &times;
+            </button>
+        </header>
+
+        <div
+            id="chat-messages"
+            class="chat-messages"
+            aria-live="polite"
+            aria-relevant="additions"
+        >
+            <div class="message assistant">
+                <div class="message-content">
+                    Hello! Welcome to ZUT. How can I help you today?
+                </div>
+            </div>
+        </div>
+
+        <form id="chat-form" class="chat-input-area">
+            <input
+                id="chat-input"
+                type="text"
+                placeholder="Ask me anything about ZUT..."
+                maxlength="1000"
+                autocomplete="off"
+                required
+            >
+
+            <button id="send-button" type="submit" aria-label="Send message">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M22 2 11 13"
+                          fill="none" stroke="currentColor"
+                          stroke-width="2" stroke-linecap="round"/>
+                    <path d="m22 2-7 20-4-9-9-4Z"
+                          fill="none" stroke="currentColor"
+                          stroke-width="2" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        </form>
+
+        <footer class="chat-footer">
+            UniAssist AI · ZUT
+        </footer>
+    </section>
+
+    <script src="chatbot.js"></script>
+
+</body>
+</html>
