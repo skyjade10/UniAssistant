@@ -1,7 +1,6 @@
-
 const API_BASE = "http://127.0.0.1:8765/api/admin";
 
-let adminApiKey = "9a9054e4be478ace9d8db557d06a57a7ba28bee889f78f29a66c4a5444d4a194b758e2f3502cc3c14e5e60857904372586dc08fc556de98732efcacd998318c8";
+let adminApiKey = "";
 
 const loginSection = document.getElementById("login-section");
 const dashboardSection = document.getElementById("dashboard-section");
@@ -15,6 +14,10 @@ const uploadMessage = document.getElementById("upload-message");
 
 const documentList = document.getElementById("document-list");
 const notification = document.getElementById("notification");
+
+// Source library
+
+const sourceList = document.getElementById("source-list");
 
 
 async function apiRequest(endpoint, options = {}) {
@@ -131,6 +134,76 @@ async function loadDashboard() {
         "Online";
 
     await loadDocuments();
+    await loadSources();
+}
+
+
+// Source listing and deletion
+
+async function loadSources() {
+    const data = await apiRequest("/sources");
+    const sources = data.sources || [];
+
+    sourceList.replaceChildren();
+
+    document.getElementById("source-count").textContent =
+        `${sources.length} source${sources.length === 1 ? "" : "s"}`;
+
+    if (sources.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "empty-state";
+        empty.textContent = "No indexed sources found.";
+        sourceList.appendChild(empty);
+        return;
+    }
+
+    sources.forEach((source) => {
+        const item = document.createElement("article");
+        item.className = "document-item";
+
+        const info = document.createElement("div");
+        info.className = "document-info";
+
+        const name = document.createElement("strong");
+        name.textContent = source.source_url;
+
+        const details = document.createElement("span");
+        details.textContent = "Indexed website or PDF source";
+
+        info.append(name, details);
+
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "delete-button";
+        deleteButton.textContent = "Delete";
+
+        deleteButton.addEventListener("click", () => {
+            deleteSource(source.source_url);
+        });
+
+        item.append(info, deleteButton);
+        sourceList.appendChild(item);
+    });
+}
+
+async function deleteSource(sourceUrl) {
+    const confirmed = confirm(
+        `Delete this source and all of its indexed chunks?\n\n${sourceUrl}`
+    );
+
+    if (!confirmed) return;
+
+    try {
+        await apiRequest(
+            `/sources?source_url=${encodeURIComponent(sourceUrl)}`,
+            { method: "DELETE" }
+        );
+
+        showNotification("Source deleted.");
+        await loadDashboard();
+
+    } catch (error) {
+        showNotification(error.message);
+    }
 }
 
 

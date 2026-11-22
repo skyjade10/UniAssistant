@@ -79,6 +79,21 @@ class ChromaStore:
 
         return len(ids)
 
+    def delete_source(self, source_url):
+        """Delete every indexed chunk belonging to a source URL."""
+
+        results = self.collection.get(
+            where={"source_url": source_url},
+            include=[]
+        )
+
+        ids = results.get("ids", [])
+
+        if ids:
+            self.collection.delete(ids=ids)
+
+        return len(ids)
+
     def search(self, query_embedding, top_k=4):
 
         if self.count() == 0:
@@ -136,3 +151,14 @@ class ChromaStore:
             where={"document_id": document_id},
             include=["documents", "metadatas"]
         )
+
+    def get_source_urls(self):
+        """Return unique source URLs currently indexed."""
+
+        results = self.collection.get(include=["metadatas"])
+
+        return sorted({
+            metadata["source_url"]
+            for metadata in results["metadatas"]
+            if metadata and metadata.get("source_url")
+        })

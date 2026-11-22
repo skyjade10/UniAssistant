@@ -1,4 +1,3 @@
-
 from functools import lru_cache
 
 from fastapi import (
@@ -144,4 +143,49 @@ def delete_document(document_id: str):
         raise HTTPException(
             status_code=500,
             detail="Unable to delete the document."
+        )
+
+
+@router.get("/sources")
+def list_sources():
+    try:
+        service = get_document_service()
+
+        return {
+            "status": "success",
+            "sources": service.get_sources()
+        }
+
+    except Exception:
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to retrieve sources."
+        )
+
+
+@router.delete("/sources")
+def delete_source(source_url: str):
+    try:
+        service = get_document_service()
+
+        result = service.delete_source(source_url)
+
+        if not result:
+            raise HTTPException(
+                status_code=404,
+                detail="Source not found."
+            )
+
+        return {
+            "status": "success",
+            "message": "Source deleted successfully."
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception:
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to delete the source."
         )

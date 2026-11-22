@@ -1,4 +1,3 @@
-
 import json
 import uuid
 
@@ -374,6 +373,52 @@ class DocumentService:
         return True
 
     # ======================================
+    # DELETE SOURCE
+    # ======================================
+
+    def delete_source(self, source_url):
+
+        if not source_url:
+            return False
+
+        source_file = Path("storage/documents/documents.jsonl")
+        removed_source_records = 0
+
+        if source_file.exists():
+            try:
+                records = []
+
+                with source_file.open("r", encoding="utf-8") as file:
+                    for line in file:
+                        if not line.strip():
+                            continue
+
+                        record = json.loads(line)
+                        metadata = record.get("metadata") or {}
+
+                        if metadata.get("source_url") == source_url:
+                            removed_source_records += 1
+                        else:
+                            records.append(record)
+
+                temporary_file = source_file.with_suffix(".tmp")
+
+                with temporary_file.open("w", encoding="utf-8") as file:
+                    for record in records:
+                        file.write(
+                            json.dumps(record, ensure_ascii=False) + "\n"
+                        )
+
+                temporary_file.replace(source_file)
+
+            except (json.JSONDecodeError, OSError):
+                raise RuntimeError("Could not update the source registry.")
+
+        deleted_chunks = self.store.delete_source(source_url)
+
+        return removed_source_records > 0 or deleted_chunks > 0
+
+    # ======================================
     # DASHBOARD STATISTICS
     # ======================================
 
@@ -395,3 +440,16 @@ class DocumentService:
             "indexed_documents": indexed_documents,
             "storage_directory": str(STORAGE_DIR)
         }
+
+    # ======================================
+    # SOURCE URLS
+    # ======================================
+
+    def get_sources(self):
+
+        source_urls = self.store.get_source_urls()
+
+        return [
+            {"source_url": source_url}
+            for source_url in source_urls
+        ]

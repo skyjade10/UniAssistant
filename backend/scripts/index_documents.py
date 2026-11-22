@@ -1,4 +1,3 @@
-
 import json
 import hashlib
 
@@ -50,7 +49,16 @@ def main():
 
     store = ChromaStore()
 
-    store.reset()
+    # Refresh only the website/PDF documents being re-indexed.  This keeps
+    # uploaded admin documents and all other existing Chroma records intact.
+    document_ids = sorted({
+        metadata["document_id"]
+        for metadata in metadatas
+        if metadata.get("document_id")
+    })
+
+    for document_id in document_ids:
+        store.delete_document(document_id)
 
     total = store.add_documents(
         chunks,
