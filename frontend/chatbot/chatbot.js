@@ -1,14 +1,15 @@
+const API_URL = `http://127.0.0.1:8765/api/chat/stream`;
 
 // ==========================================
 // ZUT AI - PARTICLE BACKGROUND CONFIGURATION
 // ==========================================
 
+
 const PARTICLE_CONFIG = {
-    // All values must be between 1 and 5
-    brightness: 4,
-    size: 5,
-    connections: 4,
-    density: 3,
+    brightness: 10,
+    size: 10,
+    connections: 10,
+    density: 10,
 
     colors: [
         "0, 217, 255",   // Cyan
@@ -25,39 +26,53 @@ const PARTICLE_CONFIG = {
 // PARTICLE SCALE VALUES
 // ==========================================
 
+
 const PARTICLE_SCALES = {
     brightness: [
-        0.20,
-        0.35,
-        0.50,
-        0.70,
-        0.95
+        0.15, 0.25, 0.35, 0.45, 0.55,
+        0.65, 0.75, 0.85, 0.95, 1.0
     ],
 
     size: [
         [0.8, 1.5],
-        [1.2, 2.0],
+        [1.0, 1.8],
+        [1.2, 2.2],
         [1.5, 2.8],
-        [2.0, 3.5],
-        [2.5, 4.5]
+        [1.8, 3.2],
+        [2.0, 3.8],
+        [2.3, 4.2],
+        [2.6, 4.8],
+        [3.0, 5.5],
+        [3.5, 6.5]
     ],
 
     connections: [
         { opacity: 0.08, distance: 80, width: 0.5 },
-        { opacity: 0.13, distance: 95, width: 0.6 },
-        { opacity: 0.20, distance: 115, width: 0.7 },
-        { opacity: 0.30, distance: 135, width: 0.9 },
-        { opacity: 0.42, distance: 155, width: 1.1 }
+        { opacity: 0.12, distance: 90, width: 0.6 },
+        { opacity: 0.16, distance: 100, width: 0.7 },
+        { opacity: 0.20, distance: 110, width: 0.8 },
+        { opacity: 0.25, distance: 120, width: 0.9 },
+        { opacity: 0.30, distance: 130, width: 1.0 },
+        { opacity: 0.35, distance: 140, width: 1.1 },
+        { opacity: 0.40, distance: 150, width: 1.2 },
+        { opacity: 0.45, distance: 165, width: 1.3 },
+        { opacity: 0.50, distance: 180, width: 1.5 }
     ],
 
     density: [
         { divisor: 25000, max: 70 },
-        { divisor: 18000, max: 100 },
-        { divisor: 11500, max: 140 },
-        { divisor: 8500, max: 180 },
-        { divisor: 6500, max: 230 }
+        { divisor: 20000, max: 100 },
+        { divisor: 16000, max: 130 },
+        { divisor: 13000, max: 160 },
+        { divisor: 11000, max: 190 },
+        { divisor: 9000, max: 220 },
+        { divisor: 8000, max: 250 },
+        { divisor: 7000, max: 280 },
+        { divisor: 6000, max: 320 },
+        { divisor: 5000, max: 350 }
     ]
 };
+
 
 // ==========================================
 // PARTICLE BACKGROUND
@@ -85,9 +100,9 @@ const mouse = {
 function getScale(category) {
     const value = PARTICLE_CONFIG[category];
 
-    if (!Number.isInteger(value) || value < 1 || value > 5) {
+    if (!Number.isInteger(value) || value < 1 || value > 10) {
         throw new Error(
-            `Invalid particle ${category} value. Use a value between 1 and 5.`
+            `Invalid particle ${category} value. Use a value between 1 and 10.`
         );
     }
 
@@ -348,7 +363,6 @@ if (canvas && ctx) {
 // ZUT AI CHAT FUNCTIONALITY
 // ==========================================
 
-const API_URL = "http://127.0.0.1:8000/api/chat";
 
 const chatToggle = document.getElementById("chat-toggle");
 const chatWidget = document.getElementById("chat-widget");
@@ -529,37 +543,45 @@ async function sendMessageWithLoading(question, loadingMessage) {
     try {
         const response = await fetch(API_URL, {
             method: "POST",
-
-            headers: {
-                "Content-Type": "application/json"
-            },
-
-            body: JSON.stringify({
-                question: question
-            })
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ question })
         });
 
-        const data = await response.json().catch(() => ({}));
-
         if (!response.ok) {
-            throw new Error(
-                data.detail || "Unable to process your question."
-            );
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.detail || "Unable to process your question.");
         }
 
-        if (!data.answer) {
+        if (!response.body) {
+            throw new Error("Streaming is not supported by this browser.");
+        }
+
+        loadingMessage?.remove();
+
+        const assistantMessage = addMessage("", "assistant");
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            assistantMessage.textContent += decoder.decode(value, { stream: true });
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        const trailingText = decoder.decode();
+        if (trailingText) {
+            assistantMessage.textContent += trailingText;
+        }
+
+        if (!assistantMessage.textContent.trim()) {
             throw new Error("The assistant returned an empty response.");
         }
 
-        loadingMessage?.remove();
-
-        addMessage(data.answer, "assistant");
-
     } catch (error) {
         console.error("Chat error:", error);
-
         loadingMessage?.remove();
-
         addMessage(
             "Sorry, I couldn't process your question right now. Please try again.",
             "assistant"

@@ -1,0 +1,198 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>ZUT AI | Admin Dashboard</title>
+
+    <link rel="stylesheet" href="admin.css">
+</head>
+
+<body>
+
+    <div class="admin-layout">
+
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon">Z</div>
+                <div>
+                    <h2>ZUT AI</h2>
+                    <span>Administration</span>
+                </div>
+            </div>
+
+            <nav>
+                <a href="#overview" class="active">Overview</a>
+                <a href="#documents">Documents</a>
+                <a href="#ai-testing">AI Testing</a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <span>Knowledge Management</span>
+                <button id="logout-button" class="logout-button">
+                    Disconnect
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+
+            <header class="topbar">
+                <div>
+                    <h1>Admin Dashboard</h1>
+                    <p>Manage the ZUT AI knowledge base.</p>
+                </div>
+
+                <div class="connection-status">
+                    <span id="connection-indicator"></span>
+                    <span id="connection-text">Not connected</span>
+                </div>
+            </header>
+
+            <!-- Authentication -->
+            <section id="login-section" class="login-section">
+                <div class="login-card">
+                    <h2>Administrator access</h2>
+                    <p>Enter your admin API key to continue.</p>
+
+                    <form id="login-form">
+                        <label for="api-key">Admin API key</label>
+
+                        <input
+                            type="password"
+                            id="api-key"
+                            placeholder="Enter your API key"
+                            required
+                        >
+
+                        <button type="submit">Connect</button>
+                    </form>
+
+                    <p id="login-error" class="error-message"></p>
+                </div>
+            </section>
+
+            <!-- Dashboard -->
+            <section id="dashboard-section" hidden>
+
+                <section id="overview" class="section">
+                    <div class="section-heading">
+                        <div>
+                            <h2>Overview</h2>
+                            <p>Knowledge base summary</p>
+                        </div>
+
+                        <button id="refresh-button" class="secondary-button">
+                            Refresh
+                        </button>
+                    </div>
+
+                    <div class="stats-grid">
+
+                        <article class="stat-card">
+                            <span>Documents</span>
+                            <strong id="total-documents">0</strong>
+                        </article>
+
+                        <article class="stat-card">
+                            <span>Indexed chunks</span>
+                            <strong id="total-chunks">0</strong>
+                        </article>
+
+                        <article class="stat-card">
+                            <span>Indexed documents</span>
+                            <strong id="indexed-documents">0</strong>
+                        </article>
+
+                        <article class="stat-card">
+                            <span>API status</span>
+                            <strong id="api-status">Unknown</strong>
+                        </article>
+
+                    </div>
+                </section>
+
+                <section id="documents" class="section">
+
+                    <div class="section-heading">
+                        <div>
+                            <h2>Documents</h2>
+                            <p>Upload and manage knowledge-base files.</p>
+                        </div>
+                    </div>
+
+                    <div class="upload-card">
+                        <form id="upload-form">
+
+                            <label for="document-file">
+                                Select a document
+                            </label>
+
+                            <input
+                                type="file"
+                                id="document-file"
+                                accept=".pdf,.txt,.docx"
+                                required
+                            >
+
+                            <p class="hint">
+                                Supported formats: PDF, TXT and DOCX.
+                                Maximum size: 15 MB.
+                            </p>
+
+                            <button type="submit" id="upload-button">
+                                Upload document
+                            </button>
+
+                        </form>
+
+                        <p id="upload-message" class="message"></p>
+                    </div>
+
+                    <div class="document-card">
+
+                        <div class="document-heading">
+                            <h3>Document library</h3>
+                            <span id="document-count">0 documents</span>
+                        </div>
+
+                        <div id="document-list" class="document-list">
+                            <p class="empty-state">
+                                Connect to load documents.
+                            </p>
+                        </div>
+
+                    </div>
+
+                </section>
+
+                <section id="ai-testing" class="section">
+                    <div class="section-heading">
+                        <div>
+                            <h2>AI Testing</h2>
+                            <p>Test the student assistant's responses.</p>
+                        </div>
+                    </div>
+
+                    <div class="testing-card">
+                        <p>
+                            The AI testing panel will be connected in
+                            the next development step.
+                        </p>
+                    </div>
+                </section>
+
+            </section>
+
+            <div id="notification" class="notification" role="status"></div>
+
+        </main>
+
+    </div>
+
+    <script src="admin.js"></script>
+
+</body>
+</html>

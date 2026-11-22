@@ -29,18 +29,35 @@ def expand_query(question: str) -> str:
 
     # Academic programme intent
     programme_terms = [
+        "program",
         "programme",
-        "programmes",
         "degree",
         "course",
-        "courses"
+        "offer",
+        "study",
+        "studies",
+        "learn",
+        "available",
+        "bachelor",
+        "diploma",
+        "certificate",
+        "qualification"
     ]
 
     if any(term in q for term in programme_terms):
         expansion_terms.extend([
-            "full-time degree programmes",
-            "open and distance learning programmes",
-            "evening degree programmes"
+            "Certificate",
+            "Diploma",
+            "Degree",
+            "Masters",
+            "Bachelor of",
+            "Full-time degree programmes",
+            "Open and distance learning programmes",
+            "Evening programmes",
+            "Information Technology",
+            "Business Administration",
+            "Electrical",
+            "Course Code"
         ])
 
     if not expansion_terms:

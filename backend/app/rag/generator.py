@@ -1,63 +1,49 @@
-
 import os
 import re
+import time
+import logging
 
 from dotenv import load_dotenv
 from google import genai
 
 load_dotenv()
+logger = logging.getLogger(__name__)
+
 
 class AnswerGenerator:
 
     def __init__(self):
-
         api_key = os.getenv("GEMINI_API_KEY")
-
         if not api_key:
             raise ValueError("GEMINI_API_KEY is missing.")
 
-        self.model = os.getenv(
-            "GEMINI_MODEL",
-            "gemini-2.5-flash"
-        )
+        self.model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+        self.client = genai.Client(api_key=api_key)
 
-        self.client = genai.Client(
-            api_key=api_key
-        )
-
-    def generate_answer(self, question, documents):
-        #raise RuntimeError("Simulated Gemini API failure")
-
-        if not documents:
-            return {
-                "answer": (
-                    "I couldn't find enough information "
-                    "in the university's knowledge base "
-                    "to answer that question."
-                ),
-                "sources": []
-            }
-
+    def _build_prompt(self, question, documents):
+        context_start = time.perf_counter()
         context_parts = []
         sources = []
+        remaining_chars = 8000
 
-        for index, document in enumerate(documents):
-
+        for index, document in enumerate(documents[:4]):
             source_id = f"S{index + 1}"
+            metadata = document.get("metadata", {})
+            content = str(document.get("content", ""))
 
-            metadata = document["metadata"]
+            if len(content) > remaining_chars:
+                content = content[:remaining_chars].rsplit(" ", 1)[0] + "..."
 
-            context_parts.append(
-                f"""
-                    SOURCE: [{source_id}]
-                    TITLE: {metadata.get("title", "Unknown")}
-                    URL: {metadata.get("source_url", "Not available")}
-                    PAGE: {metadata.get("page_number", "Not applicable")}
-
-                    CONTENT:
-                    {document["content"]}
-                    """
-            )
+            context_part = f"""
+                SOURCE: [{source_id}]
+                TITLE: {metadata.get('title', 'Unknown')}
+                URL: {metadata.get('source_url', 'Not available')}
+                PAGE: {metadata.get('page_number', 'Not applicable')}
+                CONTENT:
+                {content}
+                """
+            context_parts.append(context_part)
+            remaining_chars -= len(content)
 
             sources.append({
                 "id": source_id,
@@ -66,108 +52,81 @@ class AnswerGenerator:
                 "page_number": metadata.get("page_number")
             })
 
+            if remaining_chars <= 0:
+                break
+
         context = "\n\n".join(context_parts)
-
         prompt = f"""
-            You are ZUT AI, an assistant for
-            Zambia University College of Technology (ZUT).
-
-            Answer the user's question using ONLY the
-            university information supplied in the context.
-
-            RULES:
-            1. Answer naturally, like a helpful university front-desk assistant.
-            2. Use the supplied university information to answer questions.
-            3. Never say "Based on the context", "According to the
-            retrieved documents", or similar technical phrases.
-            4. Do not mention retrieval, embeddings, databases, documents
-            supplied to you, or internal system operations.
-            5. Give direct answers first, followed by useful details.
-            6. Do not invent university information.
-            7. If information is unavailable, politely explain that
-            you don't have that information and suggest contacting
-            the relevant university office.
-            8. Keep answers conversational, clear and concise.
-            9. Do not include source IDs, citation markers, URLs or
-            page numbers in the answer.
-            10. Do not expose internal technical information.
-            
-
-            ACADEMIC PROGRAMME QUESTIONS:
-
-            - Prioritize official programme catalogues and application forms.
-            - Retrieve and consider all relevant programme information.
-            - Combine information from multiple retrieved chunks when necessary.
-            - Distinguish degree, diploma and professional programmes.
-            - Distinguish full-time, evening and distance-learning modes.
-            - Do not present a partial list as a complete list.
-            - Do not use news articles as the sole authority for a complete
-            programme directory.
-            - If the retrieved context is insufficient, clearly say so.
-
-            SOURCE PRIORITY:
-            1. Official programme catalogues and application forms.
-            2. Official academic programme pages.
-            3. Official admission documents.
-            4. Official news articles.
-
-            When answering questions about academic programmes,
-            prioritize official programme catalogues and application forms.
-
-            Do not treat news articles as complete programme directories.
-
-            If the retrieved context contains only partial programme
-            information, explicitly state that the list may be incomplete.
-
-            Never invent or infer programmes.
+            You are ZUT AI, an assistant for Zambia University College of Technology (ZUT).
+            Answer the user's question using ONLY the university information supplied below.
+            Keep the answer direct, conversational, clear and concise. Do not invent information.
+            If information is unavailable, say so and suggest contacting the relevant university office.
+            Do not include source IDs, citations, URLs, page numbers, or internal technical information.
+            Do not start with a greeting unless the user greeted you.
 
             UNIVERSITY INFORMATION:
-
             {context}
 
             USER QUESTION:
-
             {question}
 
             ANSWER:
             """
+        logger.info("RAG_TIMING component=context_preparation elapsed_ms=%.2f", (time.perf_counter() - context_start) * 1000)
+        return prompt, sources
 
+    def generate_answer(self, question, documents):
+        if not documents:
+            return {
+                "answer": "I couldn't find enough information in the university's knowledge base to answer that question.",
+                "sources": []
+            }
+
+        prompt, sources = self._build_prompt(question, documents)
+
+        generation_start = time.perf_counter()
         response = self.client.models.generate_content(
             model=self.model,
             contents=prompt
         )
+        generation_ms = (time.perf_counter() - generation_start) * 1000
+        logger.info("RAG_TIMING component=gemini_generation elapsed_ms=%.2f", generation_ms)
 
         answer = response.text
-
         if not answer:
-            raise RuntimeError(
-                "Gemini returned an empty response."
-            )
+            raise RuntimeError("Gemini returned an empty response.")
 
-        # Extract source IDs cited in the generated answer.
-        cited_ids = set(
-            re.findall(r"\[S\d+\]", answer)
-        )
-
-        # Keep only sources referenced in the answer.
+        cited_ids = set(re.findall(r"\[S\d+\]", answer))
         cited_sources = [
             source for source in sources
             if f"[{source['id']}]" in cited_ids
         ]
 
-        print("\nDEBUG - GEMINI ANSWER:")
-        print(answer)
+        return {"answer": answer, "sources": cited_sources}
 
-        print("\nDEBUG - ALL SOURCES:")
-        print(sources)
+    async def generate_answer_stream(self, question, documents):
+        if not documents:
+            yield "I couldn't find enough information in the university's knowledge base to answer that question."
+            return
 
-        print("\nDEBUG - CITED IDS:")
-        print(cited_ids)
+        prompt = self._build_prompt(question, documents)[0]
+        generation_start = time.perf_counter()
+        first_chunk = True
 
-        print("\nDEBUG - FILTERED SOURCES:")
-        print(cited_sources)
+        stream = await self.client.aio.models.generate_content_stream(
+            model=self.model,
+            contents=prompt
+        )
 
-        return {
-            "answer": answer,
-            "sources": cited_sources
-        }
+        async for chunk in stream:
+            if chunk.text:
+                if first_chunk:
+                    first_chunk_ms = (time.perf_counter() - generation_start) * 1000
+                    logger.info("RAG_TIMING component=gemini_first_chunk elapsed_ms=%.2f", first_chunk_ms)
+                    first_chunk = False
+                yield chunk.text
+
+        logger.info(
+            "RAG_TIMING component=gemini_generation elapsed_ms=%.2f",
+            (time.perf_counter() - generation_start) * 1000
+        )

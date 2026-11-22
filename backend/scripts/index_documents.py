@@ -1,5 +1,6 @@
 
 import json
+import hashlib
 
 from app.processing.text_cleaner import clean_text
 from app.processing.text_splitter import split_text
@@ -28,13 +29,14 @@ def main():
 
         document_chunks = split_text(text)
 
+        metadata = dict(document["metadata"])
+        key = metadata.get("source_url") or metadata.get("title", "unknown")
+        metadata["document_id"] = hashlib.sha1(key.encode("utf-8")).hexdigest()[:16]
+
         for chunk in document_chunks:
 
             chunks.append(chunk)
-
-            metadatas.append(
-                document["metadata"]
-            )
+            metadatas.append(metadata)
 
     print("Generating embeddings...")
 

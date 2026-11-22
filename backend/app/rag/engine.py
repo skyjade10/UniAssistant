@@ -1,6 +1,8 @@
+import asyncio
 
 from app.rag.retriever import Retriever
 from app.rag.generator import AnswerGenerator
+
 
 class RAGEngine:
 
@@ -11,30 +13,27 @@ class RAGEngine:
 
     def ask(self, question):
 
-        # Step 1: Retrieve relevant documents.
-        documents = self.retriever.retrieve(
-            question,
-            top_k=6
-        )
+        documents = self.retriever.retrieve(question, top_k=4)
 
-        for document in documents:
-            print("\nRETRIEVED METADATA:")
-            print(document.get("metadata", {}))
-
-        # Step 2: Check whether we have useful results.
         if not documents:
             return {
-                "answer": (
-                    "I couldn't find enough information "
-                    "in the ZUT knowledge base."
-                ),
+                "answer": "I couldn't find enough information in the ZUT knowledge base.",
                 "sources": []
             }
 
-        # Step 3: Generate an answer.
-        result = self.generator.generate_answer(
+        return self.generator.generate_answer(question, documents)
+
+    async def ask_stream(self, question):
+
+        documents = await asyncio.to_thread(
+            self.retriever.retrieve,
             question,
-            documents
+            4
         )
 
-        return result
+        if not documents:
+            yield "I couldn't find enough information in the ZUT knowledge base."
+            return
+
+        async for chunk in self.generator.generate_answer_stream(question, documents):
+            yield chunk

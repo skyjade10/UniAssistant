@@ -1,10 +1,15 @@
 import re
 import math
+import time
+import logging
+
 from collections import Counter
 
 from app.embeddings.embedding_service import EmbeddingService
 from app.vectorstore.chroma_store import ChromaStore
 from app.rag.query_expander import expand_query
+
+logger = logging.getLogger(__name__)
 
 class Retriever:
 
@@ -18,7 +23,7 @@ class Retriever:
             "what", "which", "who", "how",
             "does", "do", "list", "give",
             "me", "please", "and", "by",
-            "offered", "provide", "show"
+            "offered", "provide", "show", "zut"
         }
 
     # ----------------------------------
@@ -42,11 +47,12 @@ class Retriever:
     # SEMANTIC RETRIEVAL
     # ----------------------------------
 
-    def semantic_retrieve(self, question, top_k=10):
+    def semantic_retrieve(self, question, top_k=10, question_embedding=None):
 
-        question_embedding = (
-            self.embedding_service.generate_embedding(question)
-        )
+        if question_embedding is None:
+            embedding_start = time.perf_counter()
+            question_embedding = self.embedding_service.generate_embedding(question)
+            logger.info("RAG_TIMING component=embedding_generation elapsed_ms=%.2f", (time.perf_counter() - embedding_start) * 1000)
 
         results = self.store.search(
             question_embedding,
@@ -276,23 +282,34 @@ class Retriever:
 
     def retrieve(self, question, top_k=5):
 
+        query_start = time.perf_counter()
         expanded_question = expand_query(question)
+        logger.info("RAG_TIMING component=query_processing elapsed_ms=%.2f", (time.perf_counter() - query_start) * 1000)
 
+        embedding_start = time.perf_counter()
+        question_embedding = self.embedding_service.generate_embedding(expanded_question)
+        logger.info("RAG_TIMING component=embedding_generation elapsed_ms=%.2f", (time.perf_counter() - embedding_start) * 1000)
+
+        retrieval_start = time.perf_counter()
         semantic_results = self.semantic_retrieve(
             expanded_question,
-            top_k=10
+            top_k=6,
+            question_embedding=question_embedding
         )
 
         keyword_results = self.keyword_retrieve(
             expanded_question,
-            top_k=10
+            top_k=6
         )
 
-        return self.reciprocal_rank_fusion(
+        results = self.reciprocal_rank_fusion(
             semantic_results,
             keyword_results,
             top_k=top_k
         )
+        logger.info("RAG_TIMING component=retrieval elapsed_ms=%.2f", (time.perf_counter() - retrieval_start) * 1000)
+
+        return results
 
     
     def debug_retrieval(self, question):

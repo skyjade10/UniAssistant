@@ -1,12 +1,19 @@
-
 from sentence_transformers import SentenceTransformer
+
+_MODEL = None
+
 
 class EmbeddingService:
 
     def __init__(self):
-        self.model = SentenceTransformer(
-            "all-MiniLM-L6-v2"
-        )
+        global _MODEL
+
+        if _MODEL is None:
+            _MODEL = SentenceTransformer(
+                "all-MiniLM-L6-v2"
+            )
+
+        self.model = _MODEL
 
     def generate_embeddings(self, texts):
         """Convert multiple text chunks into vectors."""

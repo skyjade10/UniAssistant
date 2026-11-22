@@ -1,0 +1,411 @@
+
+:root {
+    --primary: #003333;
+    --accent: #0090A6;
+    --background: #f4f7f8;
+    --surface: #ffffff;
+    --text: #172b2b;
+    --muted: #718080;
+    --border: #e2e9e9;
+    --danger: #c0392b;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: var(--background);
+    color: var(--text);
+}
+
+button,
+input {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+    border: none;
+    border-radius: 7px;
+    padding: 11px 16px;
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.admin-layout {
+    min-height: 100vh;
+    display: flex;
+}
+
+.sidebar {
+    width: 245px;
+    background: var(--primary);
+    color: white;
+    padding: 25px 18px;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    inset: 0 auto 0 0;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 45px;
+}
+
+.brand-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: var(--accent);
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.brand h2 {
+    margin: 0 0 4px;
+}
+
+.brand span,
+.sidebar-footer span {
+    color: #b9d0d0;
+    font-size: 12px;
+}
+
+.sidebar nav {
+    display: grid;
+    gap: 8px;
+}
+
+.sidebar nav a {
+    color: #d8e7e7;
+    text-decoration: none;
+    padding: 13px;
+    border-radius: 7px;
+}
+
+.sidebar nav a:hover,
+.sidebar nav a.active {
+    background: #145151;
+    color: white;
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    display: grid;
+    gap: 14px;
+}
+
+.logout-button {
+    background: #145151;
+    text-align: left;
+}
+
+.main-content {
+    width: calc(100% - 245px);
+    margin-left: 245px;
+    padding: 30px;
+}
+
+.topbar,
+.section-heading,
+.document-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.topbar {
+    margin-bottom: 35px;
+}
+
+.topbar h1,
+.section-heading h2 {
+    margin: 0 0 7px;
+}
+
+.topbar p,
+.section-heading p {
+    color: var(--muted);
+    margin: 0;
+}
+
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+#connection-indicator {
+    width: 9px;
+    height: 9px;
+    background: #999;
+    border-radius: 50%;
+}
+
+#connection-indicator.connected {
+    background: #20a36b;
+}
+
+.section {
+    margin-bottom: 38px;
+    scroll-margin-top: 25px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 22px;
+}
+
+.stat-card,
+.upload-card,
+.document-card,
+.testing-card,
+.login-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px;
+}
+
+.stat-card {
+    display: grid;
+    gap: 15px;
+}
+
+.stat-card span {
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.stat-card strong {
+    font-size: 28px;
+    color: var(--primary);
+}
+
+.secondary-button {
+    background: #e5f1f2;
+    color: var(--primary);
+}
+
+.upload-card,
+.document-card,
+.testing-card {
+    margin-top: 20px;
+}
+
+.upload-card form {
+    display: grid;
+    gap: 13px;
+}
+
+input[type="file"],
+input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: white;
+}
+
+.hint {
+    color: var(--muted);
+    font-size: 13px;
+    margin: 0;
+}
+
+.upload-card button {
+    justify-self: start;
+}
+
+.document-heading {
+    margin-bottom: 20px;
+}
+
+.document-heading h3 {
+    margin: 0;
+}
+
+.document-list {
+    display: grid;
+    gap: 12px;
+}
+
+.document-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 15px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.document-info {
+    min-width: 0;
+}
+
+.document-info strong {
+    display: block;
+    overflow-wrap: anywhere;
+    margin-bottom: 6px;
+}
+
+.document-info span {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.delete-button {
+    background: #fff0ee;
+    color: var(--danger);
+    flex-shrink: 0;
+}
+
+.empty-state {
+    color: var(--muted);
+    text-align: center;
+    padding: 25px;
+}
+
+.login-section {
+    max-width: 440px;
+    margin: 80px auto;
+}
+
+.login-card h2 {
+    margin-top: 0;
+}
+
+.login-card > p {
+    color: var(--muted);
+}
+
+.login-card form {
+    display: grid;
+    gap: 13px;
+    margin-top: 25px;
+}
+
+.error-message {
+    color: var(--danger) !important;
+    font-size: 13px;
+}
+
+.message {
+    font-size: 13px;
+}
+
+.notification {
+    position: fixed;
+    right: 25px;
+    bottom: 25px;
+    background: var(--primary);
+    color: white;
+    padding: 14px 18px;
+    border-radius: 8px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+
+.notification.show {
+    opacity: 1;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+@media (max-width: 950px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 650px) {
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: static;
+        padding: 15px;
+    }
+
+    .admin-layout {
+        display: block;
+    }
+
+    .brand {
+        margin-bottom: 15px;
+    }
+
+    .sidebar nav {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .sidebar nav a {
+        text-align: center;
+        font-size: 13px;
+        padding: 10px 5px;
+    }
+
+    .sidebar-footer {
+        margin-top: 15px;
+    }
+
+    .main-content {
+        width: 100%;
+        margin: 0;
+        padding: 20px 15px;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .stat-card {
+        padding: 15px;
+    }
+
+    .stat-card strong {
+        font-size: 23px;
+    }
+
+    .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .document-item {
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 380px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
