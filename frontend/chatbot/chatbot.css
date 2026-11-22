@@ -99,7 +99,7 @@ body {
     display: flex;
     flex-direction: column;
 
-    padding: 0 8%;
+    padding: 90px 8% 0;
     color: white;
 }
 
@@ -107,6 +107,12 @@ body {
 /* Navigation */
 
 .navbar {
+    position: fixed;
+    top: 0;
+    left: 8%;
+    right: 8%;
+    z-index: 100;
+
     height: 90px;
 
     display: flex;
@@ -114,6 +120,8 @@ body {
     justify-content: space-between;
 
     border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+    background: transparent;
+    backdrop-filter: none;
 }
 
 .brand {
@@ -1223,11 +1231,13 @@ body {
 @media (max-width: 600px) {
 
     .demo-page {
-        padding: 0 22px;
+        padding: 75px 22px 0;
     }
 
     .navbar {
         height: 75px;
+        left: 22px;
+        right: 22px;
     }
 
     .nav-status {
@@ -1480,18 +1490,63 @@ body {
     transform: translateY(-1px);
 }
 
-@media (max-width: 650px) {
-    .nav-status {
-        display: none;
-    }
+#voice-button {
+    background: #edf5f5;
+    color: var(--primary);
+}
 
-    .admin-nav-button span {
-        display: none;
-    }
+#voice-button:hover:not(:disabled) {
+    background: #dff3f1;
+    color: var(--secondary);
+}
 
-    .admin-nav-button {
-        width: 40px;
-        justify-content: center;
-        padding: 0;
-    }
+#voice-button.is-listening {
+    background: #d84a4a;
+    color: white;
+    animation: voice-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes voice-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(216, 74, 74, 0.25); }
+    50% { box-shadow: 0 0 0 7px rgba(216, 74, 74, 0); }
+}
+
+.message-assistant-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+
+.speak-button {
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: #778d92;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.speak-button:hover,
+.speak-button.is-speaking {
+    background: rgba(0, 144, 166, 0.1);
+    color: var(--secondary);
+}
+
+.speak-button.is-auto-reading,
+.speak-button.is-speaking {
+    background: rgba(0, 144, 166, 0.16);
+    color: var(--secondary);
+}
+
+.speak-button.is-auto-reading {
+    box-shadow: 0 0 0 2px rgba(66, 217, 200, 0.25);
+}
+
+.speak-button svg {
+    width: 16px;
+    height: 16px;
 }

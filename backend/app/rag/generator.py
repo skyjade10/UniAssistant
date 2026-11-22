@@ -62,7 +62,7 @@ class AnswerGenerator:
             Keep the answer direct, conversational, clear and concise. Do not invent information.
             If information is unavailable, say so and suggest contacting the relevant university office.
             Do not include source IDs, citations, URLs, page numbers, or internal technical information.
-            Do not start with a greeting unless the user greeted you.
+            Do not answer with a greeting like hello or hey there, unless the user greeted you.
             1. Use Markdown formatting where it improves readability.
             2. Use short paragraphs rather than long walls of text.
             3. Use headings for answers with multiple sections.

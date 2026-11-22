@@ -437,8 +437,14 @@ function renderSavedMessage(content, sender) {
     }
 
     chatMessages.appendChild(message);
-}
 
+    if (sender === "assistant") {
+        addSpeakButton(message);
+    }
+
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+}
 
 // ==========================================
 // ZUT AI CHAT FUNCTIONALITY
@@ -452,6 +458,7 @@ const chatForm = document.getElementById("chat-form");
 const chatInput = document.getElementById("chat-input");
 const chatMessages = document.getElementById("chat-messages");
 const heroChatButton = document.getElementById("hero-chat-button");
+const voiceButton = document.getElementById("voice-button");
 
 // ==========================================
 // OPEN CHAT
@@ -535,6 +542,11 @@ function addMessage(message, sender, persist = true) {
     }
 
     chatMessages.appendChild(messageElement);
+
+    if (sender === "assistant") {
+        addSpeakButton(messageElement);
+    }
+
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
     if (persist) {
@@ -716,8 +728,9 @@ async function sendMessageWithLoading(question, loadingMessage) {
             );
         }
 
-        // Render the complete final response.
+        // Render the complete final response and restore its speaker control.
         assistantMessage.innerHTML = formatAssistantMessage(finalText);
+        addSpeakButton(assistantMessage);
 
         assistantMessage.classList.remove("is-streaming");
 
@@ -841,4 +854,193 @@ function clearChatHistory() {
         "Hello! Welcome to UniAssist. How can I help you today?",
         "assistant"
     );
+}
+
+// Speech Recognition and Text-to-Speech
+// ==========================================
+
+const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+let speechRecognition = null;
+
+if (SpeechRecognition) {
+    speechRecognition = new SpeechRecognition();
+    speechRecognition.lang = "en-US";
+    speechRecognition.interimResults = true;
+    speechRecognition.continuous = false;
+
+    speechRecognition.onresult = (event) => {
+        let transcript = "";
+
+        for (let index = event.resultIndex; index < event.results.length; index++) {
+            transcript += event.results[index][0].transcript;
+        }
+
+        if (chatInput) {
+            chatInput.value = transcript.trim();
+        }
+    };
+
+    speechRecognition.onend = () => {
+        voiceButton?.classList.remove("is-listening");
+        voiceButton?.setAttribute("aria-label", "Start voice input");
+    };
+
+    speechRecognition.onerror = (event) => {
+        voiceButton?.classList.remove("is-listening");
+        voiceButton?.setAttribute("aria-label", "Start voice input");
+
+        if (event.error !== "aborted") {
+            console.warn("Speech recognition error:", event.error);
+        }
+    };
+
+    voiceButton?.addEventListener("click", () => {
+        if (voiceButton.classList.contains("is-listening")) {
+            speechRecognition.stop();
+            return;
+        }
+
+        try {
+            speechRecognition.start();
+            voiceButton.classList.add("is-listening");
+            voiceButton.setAttribute("aria-label", "Stop voice input");
+        } catch (error) {
+            console.warn("Could not start voice input:", error);
+        }
+    });
+} else if (voiceButton) {
+    voiceButton.disabled = true;
+    voiceButton.title = "Speech recognition is not supported by this browser";
+    voiceButton.setAttribute(
+        "aria-label",
+        "Speech recognition not supported"
+    );
+}
+
+let autoReadEnabled = false;
+let activeAutoReadButton = null;
+
+function clearSpeakingClasses() {
+    document.querySelectorAll(".speak-button.is-speaking").forEach((button) => {
+        button.classList.remove("is-speaking");
+    });
+}
+
+function stopAutoRead() {
+    autoReadEnabled = false;
+
+    if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+    }
+
+    document.querySelectorAll(".speak-button.is-auto-reading").forEach((button) => {
+        button.classList.remove("is-auto-reading");
+        button.title = "Read aloud";
+        button.setAttribute("aria-label", "Turn on automatic text-to-speech");
+    });
+
+    clearSpeakingClasses();
+    activeAutoReadButton = null;
+}
+
+function speakText(text, button, keepAutoMode = false) {
+    if (!("speechSynthesis" in window) || !text.trim()) {
+        return;
+    }
+
+    if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+    }
+
+    clearSpeakingClasses();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "en-US";
+    utterance.rate = 1;
+    utterance.pitch = 1;
+
+    button?.classList.add("is-speaking");
+
+    utterance.onend = () => {
+        button?.classList.remove("is-speaking");
+    };
+
+    utterance.onerror = () => {
+        button?.classList.remove("is-speaking");
+    };
+
+    if (keepAutoMode && button) {
+        document.querySelectorAll(".speak-button.is-auto-reading").forEach((item) => {
+            if (item !== button) item.classList.remove("is-auto-reading");
+        });
+        button.classList.add("is-auto-reading");
+        activeAutoReadButton = button;
+    }
+
+    window.speechSynthesis.speak(utterance);
+}
+
+function toggleAutoRead(messageElement, button) {
+    if (autoReadEnabled) {
+        stopAutoRead();
+        return;
+    }
+
+    autoReadEnabled = true;
+
+    document.querySelectorAll(".speak-button.is-auto-reading").forEach((item) => {
+        item.classList.remove("is-auto-reading");
+    });
+
+    button.classList.add("is-auto-reading");
+    button.title = "Turn off text-to-speech";
+    button.setAttribute("aria-label", "Turn off automatic text-to-speech");
+    activeAutoReadButton = button;
+
+    speakText(messageElement.dataset.rawText || "", button, true);
+}
+
+function addSpeakButton(messageElement) {
+    if (messageElement.classList.contains("user")) return;
+
+    if ((messageElement.dataset.rawText || "").trim() === "") {
+        return;
+    }
+
+    if ((messageElement.dataset.rawText || "").trim() === "One moment, please...") {
+        return;
+    }
+
+    if (messageElement.querySelector(".message-assistant-actions")) {
+        return;
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "message-assistant-actions";
+
+    const speakButton = document.createElement("button");
+    speakButton.type = "button";
+    speakButton.className = "speak-button";
+    speakButton.title = "Read aloud";
+    speakButton.setAttribute("aria-label", "Read response aloud");
+    speakButton.innerHTML = '<i data-lucide="volume-2" aria-hidden="true"></i>';
+
+    speakButton.addEventListener("click", () => {
+        toggleAutoRead(messageElement, speakButton);
+    });
+
+    actions.appendChild(speakButton);
+    messageElement.appendChild(actions);
+
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
+
+    if (autoReadEnabled) {
+        speakText(messageElement.dataset.rawText || "", speakButton, true);
+    }
+
+    return speakButton;
 }
