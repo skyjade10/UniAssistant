@@ -63,6 +63,16 @@ class AnswerGenerator:
             If information is unavailable, say so and suggest contacting the relevant university office.
             Do not include source IDs, citations, URLs, page numbers, or internal technical information.
             Do not start with a greeting unless the user greeted you.
+            1. Use Markdown formatting where it improves readability.
+            2. Use short paragraphs rather than long walls of text.
+            3. Use headings for answers with multiple sections.
+            4. Use bullet points for unordered information.
+            5. Use numbered lists for procedures and instructions.
+            6. Bold important dates, requirements, programme names and key terms.
+            7. Avoid unnecessary headings for short answers.
+            8. Do not put the entire answer inside a code block.
+            9. Avoid excessive bolding.
+            10. Keep answers conversational and easy to scan.
 
             UNIVERSITY INFORMATION:
             {context}

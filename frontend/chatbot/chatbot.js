@@ -1,5 +1,11 @@
 const API_URL = `http://127.0.0.1:8765/api/chat/stream`;
 
+if (window.lucide) {
+    window.lucide.createIcons();
+}
+
+const chatClear = document.getElementById("chat-clear");
+
 // ==========================================
 // ZUT AI - PARTICLE BACKGROUND CONFIGURATION
 // ==========================================
@@ -359,6 +365,81 @@ if (canvas && ctx) {
     animateParticles();
 }
 
+//======================================
+// CHAT HISTORY MANAGEMENT
+//======================================
+
+const CHAT_HISTORY_KEY = "uniassist_chat_history";
+const MAX_HISTORY_MESSAGES = 100;
+
+function saveChatHistory() {
+    const messages = [...chatMessages.querySelectorAll(".message")];
+
+    const history = messages
+        .map(message => ({
+            sender: message.classList.contains("user")
+                ? "user"
+                : "assistant",
+            content: message.dataset.rawText || ""
+        }))
+        .filter(message => message.content.trim() !== "")
+        .slice(-MAX_HISTORY_MESSAGES);
+
+    try {
+        localStorage.setItem(
+            CHAT_HISTORY_KEY,
+            JSON.stringify(history)
+        );
+    } catch (error) {
+        console.warn("Could not save chat history:", error);
+    }
+}
+
+function restoreChatHistory() {
+    try {
+        const saved = localStorage.getItem(CHAT_HISTORY_KEY);
+
+        if (!saved) return;
+
+        const history = JSON.parse(saved);
+
+        if (!Array.isArray(history)) return;
+
+        chatMessages.innerHTML = "";
+
+        history.forEach(message => {
+            if (
+                typeof message.content === "string" &&
+                ["user", "assistant"].includes(message.sender)
+            ) {
+                renderSavedMessage(message.content, message.sender);
+            }
+        });
+
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    } catch (error) {
+        console.warn("Could not restore chat history:", error);
+        localStorage.removeItem(CHAT_HISTORY_KEY);
+    }
+}
+
+function renderSavedMessage(content, sender) {
+    const message = document.createElement("div");
+
+    message.className = `message ${sender}`;
+    message.dataset.rawText = content;
+
+    if (sender === "assistant") {
+        message.innerHTML = formatAssistantMessage(content);
+    } else {
+        message.textContent = content;
+    }
+
+    chatMessages.appendChild(message);
+}
+
+
 // ==========================================
 // ZUT AI CHAT FUNCTIONALITY
 // ==========================================
@@ -421,26 +502,48 @@ document.addEventListener("keydown", event => {
     }
 });
 
+ // ==========================================
+ // MARKDOWN CONFIGURATION
+ // ==========================================
+
+marked.setOptions({
+    gfm: true,
+    breaks: true
+});
+
+function formatAssistantMessage(text) {
+    const html = marked.parse(text || "");
+
+    return DOMPurify.sanitize(html);
+}
+
 // ==========================================
 // DISPLAY CHAT MESSAGES
 // ==========================================
 
-function addMessage(message, sender) {
-    if (!chatMessages) return null;
 
+function addMessage(message, sender, persist = true) {
     const messageElement = document.createElement("div");
 
-    messageElement.classList.add("message", sender);
+    messageElement.className = `message ${sender}`;
+    messageElement.dataset.rawText = message;
 
-    // Use textContent to prevent HTML injection
-    messageElement.textContent = message;
+    if (sender === "assistant") {
+        messageElement.innerHTML = formatAssistantMessage(message);
+    } else {
+        messageElement.textContent = message;
+    }
 
     chatMessages.appendChild(messageElement);
-
     chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    if (persist) {
+        saveChatHistory();
+    }
 
     return messageElement;
 }
+
 
 // ==========================================
 // SEND QUESTION TO BACKEND
@@ -535,56 +638,207 @@ chatForm?.addEventListener("submit", async event => {
     }
 });
 
-// ==========================================
-// SEND MESSAGE WITH LOADING INDICATOR
-// ==========================================
+
+ // ==========================================
+ // SEND MESSAGE WITH LOADING INDICATOR
+ // ==========================================
 
 async function sendMessageWithLoading(question, loadingMessage) {
+
+    let assistantMessage = null;
+
     try {
+
         const response = await fetch(API_URL, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
             body: JSON.stringify({ question })
         });
 
         if (!response.ok) {
-            const error = await response.json().catch(() => ({}));
-            throw new Error(error.detail || "Unable to process your question.");
+            throw new Error(getFriendlyError(response));
         }
 
         if (!response.body) {
-            throw new Error("Streaming is not supported by this browser.");
+            throw new Error(
+                "Streaming is not supported by this browser."
+            );
         }
 
         loadingMessage?.remove();
 
-        const assistantMessage = addMessage("", "assistant");
+        assistantMessage = addMessage("", "assistant");
+
+        assistantMessage.classList.add("is-streaming");
+
+        assistantMessage.dataset.rawText = "";
+
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
 
         while (true) {
+
             const { done, value } = await reader.read();
+
             if (done) break;
 
-            assistantMessage.textContent += decoder.decode(value, { stream: true });
+            const chunk = decoder.decode(value, {
+                stream: true
+            });
+
+            assistantMessage.dataset.rawText += chunk;
+
+            assistantMessage.innerHTML = formatAssistantMessage(
+                assistantMessage.dataset.rawText
+            );
+
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
+        // Process any remaining decoder content.
         const trailingText = decoder.decode();
+
         if (trailingText) {
-            assistantMessage.textContent += trailingText;
+
+            assistantMessage.dataset.rawText += trailingText;
         }
 
-        if (!assistantMessage.textContent.trim()) {
-            throw new Error("The assistant returned an empty response.");
+        const finalText = assistantMessage.dataset.rawText;
+
+        if (!finalText.trim()) {
+
+            throw new Error(
+                "The assistant returned an empty response."
+            );
         }
+
+        // Render the complete final response.
+        assistantMessage.innerHTML = formatAssistantMessage(finalText);
+
+        assistantMessage.classList.remove("is-streaming");
+
+        chatMessages.scrollTop = chatMessages.scrollHeight;
 
     } catch (error) {
+
         console.error("Chat error:", error);
-        loadingMessage?.remove();
-        addMessage(
-            "Sorry, I couldn't process your question right now. Please try again.",
-            "assistant"
-        );
+
+        const errorMessage = error.message || getNetworkError(error);
+
+        if (loadingMessage) {
+            loadingMessage.remove();
+        }
+
+        addMessage(errorMessage, "assistant");
     }
+}
+
+// ==========================================
+// ERROR HANDLING
+// ==========================================
+
+function getFriendlyError(response) {
+    switch (response.status) {
+        case 400:
+            return "I couldn't understand that request. Please try rephrasing your question.";
+
+        case 401:
+            return "Your session could not be verified. Please refresh the page and try again.";
+
+        case 403:
+            return "You don't currently have permission to perform that action.";
+
+        case 404:
+            return "The chat service could not be found. Please try again later.";
+
+        case 408:
+            return "The request took too long. Please try again.";
+
+        case 429:
+            return "I'm receiving too many requests right now. Please wait a moment and try again.";
+
+        case 500:
+            return "Something went wrong while preparing your answer. Please try again.";
+
+        case 502:
+        case 503:
+        case 504:
+            return "The AI service is temporarily unavailable. Please try again shortly.";
+
+        default:
+            return "Something went wrong. Please try again.";
+    }
+}
+
+function getNetworkError(error) {
+    if (error.name === "AbortError") {
+        return "The request took too long. Please try again.";
+    }
+
+    if (!navigator.onLine) {
+        return "You appear to be offline. Check your internet connection and try again.";
+    }
+
+    return "I couldn't connect to the university assistant. Please check that the server is running.";
+}
+
+// ==========================================
+// CLEAR CHAT HISTORY
+// ==========================================
+
+function clearChatHistory() {
+    chatMessages.innerHTML = "";
+
+    localStorage.removeItem(CHAT_HISTORY_KEY);
+
+    addMessage(
+        "Hello! Welcome to UniAssist. How can I help you today?",
+        "assistant"
+    );
+}
+
+restoreChatHistory();
+
+// ==========================================
+// CLEAR CHAT BUTTON
+// ==========================================
+
+const clearChatDialog = document.getElementById("clear-chat-dialog");
+const cancelClearChat = document.getElementById("cancel-clear-chat");
+const confirmClearChat = document.getElementById("confirm-clear-chat");
+
+chatClear.addEventListener("click", () => {
+    if (typeof clearChatDialog.showModal === "function") {
+        clearChatDialog.showModal();
+    }
+});
+
+cancelClearChat.addEventListener("click", () => {
+    clearChatDialog.close();
+});
+
+confirmClearChat.addEventListener("click", () => {
+    clearChatHistory();
+    clearChatDialog.close();
+});
+
+clearChatDialog.addEventListener("click", (event) => {
+    if (event.target === clearChatDialog) {
+        clearChatDialog.close();
+    }
+});
+
+function clearChatHistory() {
+    chatMessages.innerHTML = "";
+
+    localStorage.removeItem(CHAT_HISTORY_KEY);
+
+    addMessage(
+        "Hello! Welcome to UniAssist. How can I help you today?",
+        "assistant"
+    );
 }

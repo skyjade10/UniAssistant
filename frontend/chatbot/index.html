@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -151,6 +150,14 @@
             </div>
 
             <button
+                id="chat-clear"
+                class="chat-clear"
+                type="button"
+                title="Clear conversation"
+                aria-label="Clear conversation">
+                <i data-lucide="trash-2" aria-hidden="true"></i>
+            </button>
+            <button
                 id="chat-close"
                 class="chat-close"
                 aria-label="Close chat"
@@ -200,6 +207,23 @@
         </footer>
     </section>
 
+    <dialog id="clear-chat-dialog" class="clear-chat-dialog">
+        <div class="dialog-icon" aria-hidden="true">
+            <i data-lucide="trash-2"></i>
+        </div>
+        <div class="dialog-content">
+            <h3>Clear conversation?</h3>
+            <p>This will remove all messages from this chat.</p>
+        </div>
+        <div class="dialog-actions">
+            <button id="cancel-clear-chat" class="dialog-cancel" type="button">Cancel</button>
+            <button id="confirm-clear-chat" class="dialog-confirm" type="button">Clear chat</button>
+        </div>
+    </dialog>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script src="chatbot.js"></script>
 
 </body>
