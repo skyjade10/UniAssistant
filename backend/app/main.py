@@ -52,10 +52,7 @@ def health():
     }
 
 
-# __file__ is app/main.py. 
-# .parents[0] is app/
-# .parents[1] is the root directory containing both app/ and frontend/
-FRONTEND_DIR = Path(__file__).resolve().parents[1] / "frontend"
+FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
 
 app.mount(
     "/assets",
