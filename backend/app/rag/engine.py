@@ -1,27 +1,14 @@
 import asyncio
 
+from app.rag.retriever import Retriever
+from app.rag.generator import AnswerGenerator
+
 
 class RAGEngine:
 
     def __init__(self):
-        self._retriever = None
-        self._generator = None
-
-    @property
-    def retriever(self):
-        if self._retriever is None:
-            from app.rag.retriever import Retriever
-
-            self._retriever = Retriever()
-        return self._retriever
-
-    @property
-    def generator(self):
-        if self._generator is None:
-            from app.rag.generator import AnswerGenerator
-
-            self._generator = AnswerGenerator()
-        return self._generator
+        self.retriever = Retriever()
+        self.generator = AnswerGenerator()
 
     def ask(self, question):
         documents = self.retriever.retrieve(question, top_k=4)
