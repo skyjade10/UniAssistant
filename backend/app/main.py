@@ -1,12 +1,16 @@
 import logging
+import os
 from pathlib import Path
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.api.chat import router as chat_router
 from app.api.admin import router as admin_router
+
+load_dotenv()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -65,3 +69,32 @@ app.mount(
     StaticFiles(directory=FRONTEND_DIR / "chatbot", html=True),
     name="chatbot",
 )
+
+if __name__ == "__main__":
+    import uvicorn
+
+    environment = os.getenv("APP_ENV", "development").strip().lower()
+    default_host = "0.0.0.0" if environment == "production" else "127.0.0.1"
+    host = os.getenv("HOST", default_host)
+
+    try:
+        port = int(os.getenv("PORT", "8765"))
+    except ValueError as error:
+        raise RuntimeError("PORT must be a valid integer.") from error
+
+    if not 1 <= port <= 65535:
+        raise RuntimeError("PORT must be between 1 and 65535.")
+
+    reload_enabled = os.getenv("UVICORN_RELOAD", "false").lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+    uvicorn.run(
+        app,
+        host=host,
+        port=port,
+        reload=reload_enabled,
+    )
