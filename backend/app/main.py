@@ -52,7 +52,10 @@ def health():
     }
 
 
-FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
+# __file__ is app/main.py. 
+# .parents[0] is app/
+# .parents[1] is the root directory containing both app/ and frontend/
+FRONTEND_DIR = Path(__file__).resolve().parents[1] / "frontend"
 
 app.mount(
     "/assets",
@@ -73,12 +76,12 @@ app.mount(
 if __name__ == "__main__":
     import uvicorn
 
-    environment = os.getenv("APP_ENV", "development").strip().lower()
-    default_host = "0.0.0.0" if environment == "production" else "127.0.0.1"
-    host = os.getenv("HOST", default_host)
+    # Default to 0.0.0.0 so the application is universally bindable across cloud providers
+    host = os.getenv("HOST", "0.0.0.0")
 
     try:
-        port = int(os.getenv("PORT", "8765"))
+        # Defaulting to 10000 to match Render's base service deployment requirements
+        port = int(os.getenv("PORT", "10000"))
     except ValueError as error:
         raise RuntimeError("PORT must be a valid integer.") from error
 
