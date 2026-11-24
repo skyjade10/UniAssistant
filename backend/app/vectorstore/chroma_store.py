@@ -1,4 +1,3 @@
-import chromadb
 import uuid
 
 from pathlib import Path
@@ -12,19 +11,33 @@ _CLIENTS = {}
 class ChromaStore:
 
     def __init__(self):
+        self._client = None
+        self._collection = None
 
-        DB_PATH.mkdir(parents=True, exist_ok=True)
-        cache_key = str(DB_PATH.resolve())
+    @property
+    def client(self):
+        if self._client is None:
+            import chromadb
 
-        if cache_key not in _CLIENTS:
-            _CLIENTS[cache_key] = chromadb.PersistentClient(path=cache_key)
+            DB_PATH.mkdir(parents=True, exist_ok=True)
+            cache_key = str(DB_PATH.resolve())
 
-        self.client = _CLIENTS[cache_key]
+            if cache_key not in _CLIENTS:
+                _CLIENTS[cache_key] = chromadb.PersistentClient(path=cache_key)
 
-        self.collection = self.client.get_or_create_collection(
-            name=COLLECTION_NAME,
-            metadata={"hnsw:space": "cosine"}
-        )
+            self._client = _CLIENTS[cache_key]
+
+        return self._client
+
+    @property
+    def collection(self):
+        if self._collection is None:
+            self._collection = self.client.get_or_create_collection(
+                name=COLLECTION_NAME,
+                metadata={"hnsw:space": "cosine"}
+            )
+
+        return self._collection
 
     def add_documents(self, chunks, embeddings, metadatas):
         """Add chunks with unique IDs and document metadata."""
@@ -121,7 +134,7 @@ class ChromaStore:
             name=COLLECTION_NAME
         )
 
-        self.collection = self.client.create_collection(
+        self._collection = self.client.create_collection(
             name=COLLECTION_NAME,
             metadata={"hnsw:space": "cosine"}
         )

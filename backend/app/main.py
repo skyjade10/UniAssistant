@@ -1,9 +1,12 @@
 import logging
+from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+
 from app.api.chat import router as chat_router
 from app.api.admin import router as admin_router
-from fastapi.middleware.cors import CORSMiddleware
 
 logging.basicConfig(
     level=logging.INFO,
@@ -15,9 +18,9 @@ logger.info("RAG timing logs enabled")
 
 
 app = FastAPI(
-    title = "ZUT Ai assistant",
-    description = "A RAG-powered AI assistant for ZUT students",
-    version = "1.0.0",
+    title="ZUT Ai assistant",
+    description="A RAG-powered AI assistant for ZUT students",
+    version="1.0.0",
 )
 
 app.add_middleware(
@@ -37,15 +40,28 @@ app.add_middleware(
 app.include_router(chat_router)
 app.include_router(admin_router)
 
-@app.get("/")
-def home():
-    return {
-        "message": "Welcome to ZUT Ai",
-        "status": "running"
-    }
 
 @app.get("/api/health")
 def health():
     return {
         "status": "healthy"
     }
+
+
+FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
+
+app.mount(
+    "/assets",
+    StaticFiles(directory=FRONTEND_DIR, html=True),
+    name="assets",
+)
+app.mount(
+    "/admin",
+    StaticFiles(directory=FRONTEND_DIR / "admin", html=True),
+    name="admin",
+)
+app.mount(
+    "/",
+    StaticFiles(directory=FRONTEND_DIR / "chatbot", html=True),
+    name="chatbot",
+)

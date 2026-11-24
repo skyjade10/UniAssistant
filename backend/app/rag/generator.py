@@ -3,19 +3,21 @@ import re
 import time
 import logging
 
-from dotenv import load_dotenv
-from google import genai
-
-load_dotenv()
 logger = logging.getLogger(__name__)
 
 
 class AnswerGenerator:
 
     def __init__(self):
+        from dotenv import load_dotenv
+
+        load_dotenv()
+
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
             raise ValueError("GEMINI_API_KEY is missing.")
+
+        from google import genai
 
         self.model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
         self.client = genai.Client(api_key=api_key)

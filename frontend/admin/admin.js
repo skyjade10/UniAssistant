@@ -1,4 +1,4 @@
-const API_BASE = "http://127.0.0.1:8765/api/admin";
+const API_BASE = `${window.location.origin}/api/admin`;
 
 let adminApiKey = "";
 

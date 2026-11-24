@@ -5,15 +5,6 @@ from pathlib import Path
 from datetime import datetime, timezone
 from io import BytesIO
 
-from docx import Document as WordDocument
-
-from app.ingestion.pdf_loader import load_pdf_bytes
-from app.processing.text_cleaner import clean_text
-from app.processing.text_splitter import split_text
-
-from app.embeddings.embedding_service import EmbeddingService
-from app.vectorstore.chroma_store import ChromaStore
-
 
 # ==========================================
 # STORAGE CONFIGURATION
@@ -39,25 +30,29 @@ class DocumentService:
         UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
         REGISTRY_FILE.parent.mkdir(parents=True, exist_ok=True)
 
-        # Lazy-load the embedding model.
         self._embedding_service = None
-
-        self.store = ChromaStore()
+        self._store = None
 
         if not REGISTRY_FILE.exists():
             self._save_registry([])
 
-    # ======================================
-    # EMBEDDING SERVICE
-    # ======================================
-
     @property
     def embedding_service(self):
-
         if self._embedding_service is None:
+            from app.embeddings.embedding_service import EmbeddingService
+
             self._embedding_service = EmbeddingService()
 
         return self._embedding_service
+
+    @property
+    def store(self):
+        if self._store is None:
+            from app.vectorstore.chroma_store import ChromaStore
+
+            self._store = ChromaStore()
+
+        return self._store
 
     # ======================================
     # DOCUMENT REGISTRY
@@ -102,6 +97,7 @@ class DocumentService:
         extension = Path(filename).suffix.lower()
 
         if extension == ".pdf":
+            from app.ingestion.pdf_loader import load_pdf_bytes
 
             return load_pdf_bytes(
                 file_bytes,
@@ -129,6 +125,7 @@ class DocumentService:
             }]
 
         if extension == ".docx":
+            from docx import Document as WordDocument
 
             try:
                 document = WordDocument(BytesIO(file_bytes))
@@ -208,6 +205,9 @@ class DocumentService:
             safe_filename,
             file_bytes
         )
+
+        from app.processing.text_cleaner import clean_text
+        from app.processing.text_splitter import split_text
 
         chunks = []
         metadatas = []

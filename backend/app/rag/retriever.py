@@ -5,8 +5,6 @@ import logging
 
 from collections import Counter
 
-from app.embeddings.embedding_service import EmbeddingService
-from app.vectorstore.chroma_store import ChromaStore
 from app.rag.query_expander import expand_query
 
 logger = logging.getLogger(__name__)
@@ -14,8 +12,8 @@ logger = logging.getLogger(__name__)
 class Retriever:
 
     def __init__(self):
-        self.embedding_service = EmbeddingService()
-        self.store = ChromaStore()
+        self._embedding_service = None
+        self._store = None
 
         self.stop_words = {
             "the", "is", "are", "a", "an",
@@ -25,6 +23,22 @@ class Retriever:
             "me", "please", "and", "by",
             "offered", "provide", "show", "zut"
         }
+
+    @property
+    def embedding_service(self):
+        if self._embedding_service is None:
+            from app.embeddings.embedding_service import EmbeddingService
+
+            self._embedding_service = EmbeddingService()
+        return self._embedding_service
+
+    @property
+    def store(self):
+        if self._store is None:
+            from app.vectorstore.chroma_store import ChromaStore
+
+            self._store = ChromaStore()
+        return self._store
 
     # ----------------------------------
     # TOKENIZATION

@@ -1,18 +1,29 @@
 import asyncio
 
-from app.rag.retriever import Retriever
-from app.rag.generator import AnswerGenerator
-
 
 class RAGEngine:
 
     def __init__(self):
+        self._retriever = None
+        self._generator = None
 
-        self.retriever = Retriever()
-        self.generator = AnswerGenerator()
+    @property
+    def retriever(self):
+        if self._retriever is None:
+            from app.rag.retriever import Retriever
+
+            self._retriever = Retriever()
+        return self._retriever
+
+    @property
+    def generator(self):
+        if self._generator is None:
+            from app.rag.generator import AnswerGenerator
+
+            self._generator = AnswerGenerator()
+        return self._generator
 
     def ask(self, question):
-
         documents = self.retriever.retrieve(question, top_k=4)
 
         if not documents:
@@ -24,7 +35,6 @@ class RAGEngine:
         return self.generator.generate_answer(question, documents)
 
     async def ask_stream(self, question):
-
         documents = await asyncio.to_thread(
             self.retriever.retrieve,
             question,

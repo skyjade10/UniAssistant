@@ -1,4 +1,4 @@
-const API_URL = `http://127.0.0.1:8765/api/chat/stream`;
+const API_URL = `${window.location.origin}/api/chat/stream`;
 
 if (window.lucide) {
     window.lucide.createIcons();
